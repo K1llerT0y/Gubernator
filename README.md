@@ -47,6 +47,31 @@ paste the copyed command in the steam launch options
 Read GUBERNATOR_DOCS.md for details
 
 ---
+## Images
+### MangoHud
+![](/img/gubr1.png)
+### Proton-Tweaks
+![](/img/gubr2.png)
+### Custom app
+![](/img/gubr3.png)
+### Steam Launch Command
+![](/img/gubr4.png)
+
+---
+
+## Credits
+[MangoHud](https://github.com/flightlessmango/MangoHud)\
+[fgmod](https://github.com/FakeMichau/fgmod)\
+[GOverlay](https://github.com/benjamimgois/goverlay)\
+[Proton-GE](https://github.com/GloriousEggroll/proton-ge-custom)\
+[Proton Valve](https://github.com/ValveSoftware/Proton)\
+[CachyOS Wiki](https://wiki.cachyos.org/configuration/gaming/)\
+[vkd3d-proton](https://github.com/HansKristian-Work/vkd3d-proton)\
+[DXVK](https://github.com/doitsujin/dxvk)
+
+more credits/sources are in GUBERNATOR_DOCS.md
+
+---
 
 ## License
 
