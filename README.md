@@ -23,19 +23,21 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 ## Installation
 
 Open the Therminal in the folder.
-- chmod +x install.sh
-- ./install.sh
 
----
-
-### Steam launch command
-paste the copyed command in the steam launch options
-
+```
+  chmod +x install.sh
+  ./install.sh
+```
 ---
 
 ## Usage
 
 Open the UI from the app menu or search for gubr or Gubernator
+
+---
+
+## Steam launch command
+paste the copyed command in the steam launch options
 
 ---
 
