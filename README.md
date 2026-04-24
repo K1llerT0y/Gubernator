@@ -33,6 +33,7 @@ Open the Therminal in the folder.
 ## Usage
 
 Open the UI from the app menu or search for gubr or Gubernator
+> if you add a custom app like CheatHappens Aurora, you need to launch the game first
 
 ---
 
