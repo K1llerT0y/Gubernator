@@ -14,6 +14,7 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 - Global MangoHud and Proton settings
 - Per-game MangoHud configuration
 - Per-game Proton settings
+- Applys settings automatic
 - Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
 - Isolated Wine environment variables for the custom app that do not affect the game process
 - Single Steam launch command for all games
@@ -33,6 +34,10 @@ Open the Therminal in the folder.
 ## Usage
 
 Open the UI from the app menu or search for gubr or Gubernator
+- Make your settings
+- add the copyed launch command into steam launch options
+
+Save & Apply button is for those ones who want to click it (like me)
 > if you add a custom app like CheatHappens Aurora, you need to launch the game first
 
 ---
