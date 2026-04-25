@@ -9,6 +9,23 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 
 ---
 
+- [Gubernator](#gubernator)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Steam launch command](#steam-launch-command)
+- [Project structure](#project-structure)
+- [Images](#images)
+  - [MangoHud](#mangohud)
+  - [Proton-Tweaks](#proton-tweaks)
+  - [Custom app](#custom-app)
+  - [Steam Launch Command](#steam-launch-command)
+- [Credits](#credits)
+- [License](#license)
+- [Etymology](#etymology)
+
+---
+
 ## Features
 
 - Global MangoHud and Proton settings
@@ -18,7 +35,7 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 - Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
 - Isolated Wine environment variables for the custom app that do not affect the game process
 - Single Steam launch command for all games
-
+> there are a lot more settings that you can't see in the [images](#images)
 ---
 
 ## Installation
@@ -40,7 +57,7 @@ Open the UI from the app menu or search for gubr or Gubernator
 Save & Apply button is for those ones who want to click it (like me)
 > if you add a custom app like CheatHappens Aurora, you need to launch the game first
 
----
+
 
 ## Steam launch command
 paste the copyed command in the steam launch options
@@ -49,7 +66,7 @@ paste the copyed command in the steam launch options
 
 ## Project structure
 
-Read GUBERNATOR_DOCS.md for details
+Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 
 ---
 ## Images
@@ -65,16 +82,16 @@ Read GUBERNATOR_DOCS.md for details
 ---
 
 ## Credits
-[MangoHud](https://github.com/flightlessmango/MangoHud)\
-[fgmod](https://github.com/FakeMichau/fgmod)\
-[GOverlay](https://github.com/benjamimgois/goverlay)\
-[Proton-GE](https://github.com/GloriousEggroll/proton-ge-custom)\
-[Proton Valve](https://github.com/ValveSoftware/Proton)\
-[CachyOS Wiki](https://wiki.cachyos.org/configuration/gaming/)\
-[vkd3d-proton](https://github.com/HansKristian-Work/vkd3d-proton)\
-[DXVK](https://github.com/doitsujin/dxvk)
+[MangoHud](https://github.com/flightlessmango/MangoHud) MangoHud configs\
+[fgmod](https://github.com/FakeMichau/fgmod) one command for all games\
+[GOverlay](https://github.com/benjamimgois/goverlay) for the idea\
+[Proton-GE](https://github.com/GloriousEggroll/proton-ge-custom) additional Proton configs\
+[Proton Valve](https://github.com/ValveSoftware/Proton) Proton configs\
+[CachyOS Wiki](https://wiki.cachyos.org/configuration/general_system_tweaks/) for nvidia Smooth Motion\
+[vkd3d-proton](https://github.com/HansKristian-Work/vkd3d-proton) vkD3D configs\
+[DXVK](https://github.com/doitsujin/dxvk) DXVK configs
 
-more credits/sources are in GUBERNATOR_DOCS.md
+more credits/sources are in [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md)
 
 ---
 
