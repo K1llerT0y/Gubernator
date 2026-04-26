@@ -14,6 +14,7 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 - [Installation](#installation)
 - [Usage](#usage)
   - [Steam launch command](#steam-launch-command)
+  - [CheatHappens Aurora](#cheathappens-aurora)
 - [Project structure](#project-structure)
 - [Images](#images)
   - [MangoHud](#mangohud)
@@ -61,6 +62,21 @@ Save & Apply button is for those ones who want to click it (like me)
 
 ## Steam launch command
 paste the copyed command in the steam launch options
+
+## CheatHappens Aurora
+1. activate per-game custom settings
+2. select Aurora.exe (Portable version)
+3. launch the game
+4. launch Aurora (custom app) search for the game and activate the trainer
+
+### things i noticed
+if you start Aurora firs, the game won't start until you close Aurora
+
+when you start Aurora without the game to make settings or so and Aurora is a white or black window, then start the game and Aurora should be fixed (for me it fixt the black/white after a system reboot)
+
+if the GAME CRASHES after you activate the trainer its likely that the game runs on DXVK, fix for this is simply to deactivate the overlay in the trainer settings (after that it workt for me)
+
+if Aurora downloads an update and fails to restart itself, open Aurora directly from where you saved it (not through the tool) and apply the update that way
 
 ---
 
