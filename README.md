@@ -31,6 +31,7 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 
 - Global MangoHud and Proton settings
 - Per-game MangoHud configuration
+  - change MangoHud settings while the game is running
 - Per-game Proton settings
 - Applys settings automatic
 - Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
@@ -67,12 +68,13 @@ paste the copyed command in the steam launch options
 1. activate per-game custom settings
 2. select Aurora.exe (Portable version)
 3. launch the game
-4. launch Aurora (custom app) search for the game and activate the trainer
+4. click on Auto-fill Proton Prefix
+5. launch Aurora (custom app) search for the game and activate the trainer
 
 ### things i noticed
-if you start Aurora firs, the game won't start until you close Aurora
+if you start Aurora first, the game won't start until you close Aurora
 
-when you start Aurora without the game to make settings or so and Aurora is a white or black window, then start the game and Aurora should be fixed (for me it fixt the black/white after a system reboot)
+when you start Aurora without the game to make settings or so and Aurora is a white or black window, then start the game and Aurora should be fixed (~for me it fixt the black/white after a system reboot~ UPDATE: it is random in which games you can use Auroras UI without a running game)
 
 if the GAME CRASHES after you activate the trainer its likely that the game runs on DXVK, fix for this is simply to deactivate the overlay in the trainer settings (after that it workt for me)
 
