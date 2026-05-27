@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
-Gubernator is a per-game launch configurator for Linux. It manages MangoHud and Proton settings global or on a per-game basis, integrates custom applications into the game's Proton prefix and Wine server with isolated environment variables, all through a single Steam launch command.
+Gubernator is a game configurator for Linux. It manages MangoHud and Proton settings global or on a per-game basis, integrates custom applications into the game's Proton prefix and Wine server with isolated environment variables, it lets you manage all kind of stuff and all through a single Steam launch command.
 
 ---
 
@@ -19,7 +19,12 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
 - [Images](#images)
   - [MangoHud](#mangohud)
   - [Proton-Tweaks](#proton-tweaks)
+  - [Proton Manager](#proton-manager)
   - [Custom app](#custom-app)
+  - [Engine](#engine)
+  - [Reshade](#reshade)
+  - [Saves](#saves)
+  - [Filter](#filter)
   - [Steam Launch Command](#steam-launch-command)
 - [Credits](#credits)
 - [License](#license)
@@ -34,8 +39,16 @@ Gubernator is a per-game launch configurator for Linux. It manages MangoHud and 
   - change MangoHud settings while the game is running
 - Per-game Proton settings
 - Applys settings automatic
+- Filter to hide Steam Proton and Linux Runtimes
+  - you can add custom fiter to hide Software (e.g. Blender, Lossless Scaling)
+- Proton Manager
+  - list of all installed custom Proton versions and shortcut to open Proton Plus and ProtonUp-Qt
 - Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
-- Isolated Wine environment variables for the custom app that do not affect the game process
+  - Isolated Wine environment variables for the custom app that do not affect the game process
+- Engine
+  - shows the Engine for the game and adds useful settings (not for all engines)
+- Reshade
+- Saves lets you backup your save or migrate from Linux native to Proton
 - Single Steam launch command for all games
 > there are a lot more settings that you can't see in the [images](#images)
 ---
@@ -54,7 +67,7 @@ Open the Therminal in the folder.
 
 Open the UI from the app menu or search for gubr or Gubernator
 - Make your settings
-- add the copyed launch command into steam launch options
+- add the copied launch command into steam launch options
 
 Save & Apply button is for those ones who want to click it (like me)
 > if you add a custom app like CheatHappens Aurora, you need to launch the game first
@@ -62,7 +75,7 @@ Save & Apply button is for those ones who want to click it (like me)
 
 
 ## Steam launch command
-paste the copyed command in the steam launch options
+paste the copied command in the steam launch options
 
 ## CheatHappens Aurora
 1. activate per-game custom settings
@@ -87,15 +100,29 @@ if Aurora downloads an update and fails to restart itself, open Aurora directly 
 Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 
 ---
+> [!NOTE]
+> images are from version 1 and 2
+
 ## Images
 ### MangoHud
-![](/img/gubr1.png)
+![V1](/img/gubr1.png)
 ### Proton-Tweaks
-![](/img/gubr2.png)
+![V2](/img/gubr2-2.png)
+### Proton Manager
+![V2](/img/gubr6.png)
 ### Custom app
-![](/img/gubr3.png)
+![V1](/img/gubr3.png)
+### Engine
+![V2](/img/gubr7.png)
+![V2](/img/gubr9.png)
+### Reshade
+![V2](/img/gubr8.png)
+### Saves
+![V2](/img/gubr5.png)
+### Filter
+![V2](/img/gubr10.png)
 ### Steam Launch Command
-![](/img/gubr4.png)
+![V1](/img/gubr4.png)
 
 ---
 
@@ -107,7 +134,10 @@ Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 [Proton Valve](https://github.com/ValveSoftware/Proton) Proton configs\
 [CachyOS Wiki](https://wiki.cachyos.org/configuration/general_system_tweaks/) for nvidia Smooth Motion\
 [vkd3d-proton](https://github.com/HansKristian-Work/vkd3d-proton) vkD3D configs\
-[DXVK](https://github.com/doitsujin/dxvk) DXVK configs
+[DXVK](https://github.com/doitsujin/dxvk) DXVK configs\
+[kevinlekiller](https://github.com/kevinlekiller/reshade-steam-proton) Reshade Script\
+[Vysp3r](https://github.com/Vysp3r/ProtonPlus) Proton Plus\
+[DavidoTek](https://github.com/DavidoTek/ProtonUp-Qt) ProtonUp-Qt
 
 more credits/sources are in [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md)
 
