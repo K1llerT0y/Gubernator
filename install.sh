@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$HOME/.local/share/gubernator"
 BIN_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 
 # ── Detect distro ─────────────────────────────────────────
 detect_distro() {
@@ -101,12 +102,21 @@ detect_distro
 install_dependencies
 
 echo "==> Creating directories..."
-mkdir -p "$INSTALL_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$HOME/.config/gubernator"
+mkdir -p "$INSTALL_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$ICON_DIR" "$HOME/.config/gubernator"
 
 echo "==> Copying app..."
-cp "$SCRIPT_DIR/icong.svg" "$INSTALL_DIR/icong.svg"
 cp "$SCRIPT_DIR/gubernator.py" "$INSTALL_DIR/gubernator.py"
 chmod +x "$INSTALL_DIR/gubernator.py"
+
+echo "==> Installing icon..."
+if ! cp "$SCRIPT_DIR/icong.svg" "$ICON_DIR/io.gubernator.svg" 2>/dev/null; then
+    echo "    (icon dir not writable, fixing ownership with sudo)"
+    sudo mkdir -p "$ICON_DIR"
+    sudo chown -R "$USER:$USER" "$HOME/.local/share/icons/hicolor"
+    cp "$SCRIPT_DIR/icong.svg" "$ICON_DIR/io.gubernator.svg"
+fi
+# remove old absolute-path icon copy if present
+rm -f "$INSTALL_DIR/icong.svg"
 
 echo "==> Creating launcher..."
 cat > "$BIN_DIR/gubernator" <<EOF
@@ -116,17 +126,20 @@ EOF
 chmod +x "$BIN_DIR/gubernator"
 
 echo "==> Creating desktop entry..."
-cat > "$DESKTOP_DIR/gubernator.desktop" <<EOF
+# remove old misnamed desktop file if present
+rm -f "$DESKTOP_DIR/gubernator.desktop"
+cat > "$DESKTOP_DIR/io.gubernator.desktop" <<EOF
 [Desktop Entry]
 Name=Gubernator
 Comment=One command, full control
 Exec=$BIN_DIR/gubernator
-Icon=$INSTALL_DIR/icong.svg
+Icon=io.gubernator
 Terminal=false
 Type=Application
 Categories=Game;Settings;
 Keywords=mangohud;gaming;gubr;overlay;proton;vsync;hdr;
 EOF
+update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
 
 echo ""
 echo "✓ Done!"
