@@ -1,9 +1,13 @@
 # Gubernator – Developer & User Documentation
 
-**Version:** 2.0  
+**Version:** 2.2.0  
 **Platform:** Linux (GTK4 + libadwaita)  
 **Language:** Python 3  
-**File:** `gubernator.py`
+**File:** [gubernator.py](/gubernator.py)
+
+> [!NOTE]
+> This Doc is made with AI\
+> If it reads in a strange way, it's due to ai
 
 ---
 
@@ -42,6 +46,10 @@
    - 5.26 [Callbacks and the write cycle](#526-callbacks-and-the-write-cycle)
    - 5.27 [The vkcube live preview](#527-the-vkcube-live-preview)
    - 5.28 [The conflict protection system](#528-the-conflict-protection-system)
+   - 5.29 [The Game tab](#529-the-game-tab)
+   - 5.30 [PCGamingWiki data pipeline](#530-pcgamingwiki-data-pipeline)
+   - 5.31 [PCGW HTML parsing – the four formats](#531-pcgw-html-parsing--the-four-formats)
+   - 5.32 [Tweaks UI – the three preference groups](#532-tweaks-ui--the-three-preference-groups)
 6. [Data flow diagram](#6-data-flow-diagram)
 7. [How to add a new MangoHud option](#7-how-to-add-a-new-mangohud-option)
 8. [How to add a new Proton tweak](#8-how-to-add-a-new-proton-tweak)
@@ -156,6 +164,8 @@ After first launch Gubernator creates these files:
         ├── 123456.env                    ← Per-game Proton env vars for AppID 123456
         ├── 123456-nomangohud             ← Empty flag file: disables MangoHud for this game
         ├── 123456-launch-args.txt        ← Extra launch arguments (one per line, e.g. RE Engine)
+        ├── 123456-tweaks-cache.json      ← PCGamingWiki data cache for AppID 123456
+        ├── 123456-tweaks-args.txt        ← Active game-tab launch args (one per line)
         └── 123456-companion.sh           ← Companion launcher script (created externally if used)
 ```
 
@@ -171,6 +181,8 @@ After first launch Gubernator creates these files:
 | `games/<appid>.env` | Per-game Proton env vars, sourced by the global wrapper. Also contains `unset` commands for global vars that should not apply to this game. |
 | `games/<appid>-nomangohud` | Empty flag file. When it exists, the wrapper exports `MANGOHUD=0` for this game, disabling the overlay. |
 | `games/<appid>-launch-args.txt` | Extra command-line arguments appended to the game command. Currently used by RE Engine to pass `/WineDetectionEnabled:False`. |
+| `games/<appid>-tweaks-cache.json` | PCGamingWiki data cached from the last successful API fetch. Contains `launch_args`, `file_ops`, `screen_args`, `widescreen_info`, and the `last_checked` date string (ISO 8601). Never touched if the API returns nothing useful. |
+| `games/<appid>-tweaks-args.txt` | Active Game-tab launch arguments selected by the user (one per line). Loaded by the wrapper script and appended to the game command. Deleted when no args are active. |
 | `games/<appid>-companion.sh` | Companion app launcher. Checked by the wrapper at runtime. |
 
 ---
@@ -186,6 +198,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Gdk, GLib, Pango
 from pathlib import Path
 import subprocess, signal, os, json, shlex, shutil, random
+import threading, urllib.request, urllib.parse, datetime
 ```
 
 `gi` is the Python GObject Introspection library. It gives Python access to any GObject-based C library installed on the system. `gi.require_version()` must be called before any imports from `gi.repository` to lock in the correct version. The five imported modules are:
@@ -196,7 +209,7 @@ import subprocess, signal, os, json, shlex, shutil, random
 - `GLib` – system utilities used by GTK (used here for `GLib.timeout_add()` and `GLib.idle_add()`)
 - `Pango` – text layout library (used for `Pango.EllipsizeMode.END` to truncate long game names in the sidebar)
 
-`re` is Python's regular expression module, used to parse Valve's VDF/ACF file format. `subprocess` launches vkcube and companion apps. `signal` and `os` kill those processes cleanly. `json` handles persistence. `pathlib.Path` is used for all file operations. `shlex` safely splits shell command strings into argument lists. `shutil` copies save files and finds executables on PATH. `random` drives the occasional humorous save status message.
+`re` is Python's regular expression module, used to parse Valve's VDF/ACF file format. `subprocess` launches vkcube and companion apps. `signal` and `os` kill those processes cleanly. `json` handles persistence. `pathlib.Path` is used for all file operations. `shlex` safely splits shell command strings into argument lists. `shutil` copies save files and finds executables on PATH. `random` drives the occasional humorous save status message. `threading` runs PCGamingWiki API fetches in daemon threads so the UI stays responsive. `urllib.request` and `urllib.parse` make the HTTP requests to the PCGW MediaWiki API. `datetime` provides `datetime.date.today()` for the once-per-day cache freshness check.
 
 ### 5.2 Path constants
 
@@ -534,9 +547,10 @@ elif [ "${MANGOHUD:-1}" != "0" ]; then
 fi
 ```
 
-**4. Extra launch arguments** (for RE Engine and similar):
+**4. Extra launch arguments** – two separate files, both accumulated into `_GC_EXTRA_ARGS`:
 
 ```bash
+# Engine-specific args (e.g. RE Engine wine detection flag)
 _GC_ARGS_FILE="~/.config/gubernator/games/${SteamAppId}-launch-args.txt"
 _GC_EXTRA_ARGS=()
 if [ -n "$SteamAppId" ] && [ -f "$_GC_ARGS_FILE" ]; then
@@ -544,7 +558,17 @@ if [ -n "$SteamAppId" ] && [ -f "$_GC_ARGS_FILE" ]; then
         [ -n "$_arg" ] && _GC_EXTRA_ARGS+=("$_arg")
     done < "$_GC_ARGS_FILE"
 fi
+
+# Game-tab tweaks args (screen/resolution/other args set by the user in the Game tab)
+_GC_TWEAKS_FILE="~/.config/gubernator/games/${SteamAppId}-tweaks-args.txt"
+if [ -n "$SteamAppId" ] && [ -f "$_GC_TWEAKS_FILE" ]; then
+    while IFS= read -r _arg; do
+        [ -n "$_arg" ] && _GC_EXTRA_ARGS+=("$_arg")
+    done < "$_GC_TWEAKS_FILE"
+fi
 ```
+
+Both files feed into the same `_GC_EXTRA_ARGS` array, which is then passed to the game command alongside any companion-launch logic.
 
 **5. Companion and game launch**:
 
@@ -766,6 +790,7 @@ tab_pages = [
     ("MangoHud",      self._page_mango(),     is_global, editable),
     ("Proton-Tweaks", self._page_proton(),    is_global, editable),
     ("Custom App",    self._page_companion(), False,     editable),
+    ("Game",          self._page_game(),      False,     True),      # always accessible
     ("Engine",        self._page_engine(),    False,     True),      # always accessible
     ("Reshade",       self._page_reshade(),   is_global, editable),
     ("Saves",         self._page_saves(),     False,     True),      # always accessible
@@ -773,6 +798,8 @@ tab_pages = [
 if is_global:
     tab_pages.insert(2, ("Proton Manager", self._page_versions(), True, True))
 ```
+
+The **Game** tab is always accessible regardless of the custom settings toggle because it shows PCGamingWiki data that does not depend on per-game settings being enabled. The Game tab is hidden (shows a placeholder) when "Global / Default" is selected, since PCGamingWiki data is per-game only.
 
 For each tab: `page.set_sensitive(sensitive)` grays out the page content but the tab header remains clickable. Tab labels are shown in **bold** if they are the "home" tab for the current profile (bold = primary context).
 
@@ -1063,6 +1090,7 @@ def _do_write(self):
                        global_active, global_custom,
                        mangohud_disabled=self.mangohud_disabled)
         save_nomangohud(self.selected_appid, self.mangohud_disabled)
+        save_game_tweak_args(self.selected_appid, self.s.get("game_tweak_args", []))
     else:
         # Per-game with custom disabled – preview only, no files written
         mango_text = build_conf(load_settings())
@@ -1125,35 +1153,230 @@ The `_mkproton(key, conflicts)` method returns a callback function (a closure) t
 
 **Why `_proton_callbacks` was added**: `handler_block_by_func(cb)` requires the exact same closure object that was passed to `sw.connect()`. Since `_mkproton()` returns a new closure each time, the closure reference is stored in `self._proton_callbacks[key]` at build time and retrieved from there when needed for the NTSync and HDR automations.
 
+### 5.29 The Game tab
+
+`_page_game()` builds the Game tab. It is always accessible (never grayed out) but shows a placeholder message when "Global / Default" is selected, because all PCGamingWiki data is per-game.
+
+**Installation group** — shown for every per-game profile:
+
+- **Install Path** – displays the game's installation directory (from `read_steam_games()`). An "Open Folder" button opens it in the file manager.
+- **PCGamingWiki** – an "Open Page" button that resolves the game's PCGW article URL via the cargo API and opens it in the browser.
+- **Game Tweaks Data** – shows the date of the last successful API fetch (`Last fetched: YYYY-MM-DD`) and a **Fetch API** button. The Fetch API button clears the session cache and triggers an immediate re-fetch even if the data was already fetched today.
+
+**Game Tweaks section** — a placeholder label ("Loading tweaks from PCGamingWiki…") is shown immediately while a daemon thread runs `_fetch_and_update_tweaks()` in the background. Once complete, `GLib.idle_add()` calls `_rebuild_tweaks_ui()` on the GTK main thread to replace the placeholder with real content. When custom settings are disabled, a hint row is shown instead of interactive controls.
+
+The fetch thread is started unconditionally on every tab open. It completes immediately (without network access) when session-cached or fresh file-cached data is available.
+
+### 5.30 PCGamingWiki data pipeline
+
+`_fetch_and_update_tweaks(appid, install_dir, tweaks_box, editable, force, fetch_btn, api_row)` runs on a background daemon thread. It walks through a priority ladder:
+
+**1. Session cache** (`_TWEAKS_SESSION_CACHE`)
+
+A module-level dict keyed by AppID. If the game was already fetched during the current application run (and `force=False`), the cached data is reused immediately without any disk or network access. The Fetch API button sets `force=True` and clears this cache entry first.
+
+**2. File cache** (`games/<appid>-tweaks-cache.json`)
+
+Read from disk at every fetch. If the `last_checked` field in the JSON equals today's date (using `datetime.date.today()`) and the cache has at least some data, the file data is promoted into the session cache and used directly — no API call is made.
+
+**3. Two-step API fetch**
+
+If neither cache is current, the API is queried:
+
+```
+Step 1 – Cargo query: resolve the game's page name from Steam AppID
+  GET https://www.pcgamingwiki.com/w/api.php
+      ?action=cargoquery&tables=Infobox_game
+      &fields=_pageName%3Dpage
+      &where=Steam_AppID+HOLDS+"<appid>"
+      &format=json&limit=1
+
+Step 2 – Page parse: fetch the full rendered HTML of the article
+  GET https://www.pcgamingwiki.com/w/api.php
+      ?action=parse&page=<encoded_page_name>
+      &prop=text&format=json
+```
+
+Both requests use `urllib.request` with a `User-Agent: Gubernator/1.0` header (`_PCGW_UA`). The 10-second timeout prevents hangs on slow connections.
+
+**4. Parsing the HTML**
+
+Five parser functions run on the fetched HTML in sequence (see section 5.31). Results are collected in four lists: `all_args`, `all_screen_args`, `all_file_ops`, `all_widescreen_info`.
+
+**5. Cache write logic**
+
+The cache is only written when a fetch actually returned useful data. The comparison between the newly parsed content and the previously cached content determines whether the data payload changes:
+
+- **Data changed** → write `{…new_content, "last_checked": today}` to disk (full rewrite).
+- **Data unchanged** → read existing JSON, update only `last_checked`, write back (avoids unnecessary data churn).
+- **API returned nothing** → leave the file untouched. The existing cache is silently used as a fallback.
+
+This means the cache file is never cleared or invalidated by a failed or empty fetch. The game will continue to show previously found options even when offline.
+
+**6. UI handoff**
+
+Regardless of which code path was taken, the function ends with:
+
+```python
+GLib.idle_add(self._rebuild_tweaks_ui, appid, tweaks_box, all_args, all_file_ops,
+              install_dir, editable, fetch_btn, api_row, all_screen_args, all_widescreen_info)
+```
+
+`GLib.idle_add()` schedules the UI rebuild on the GTK main thread (mandatory because GTK is not thread-safe). `_finalize_tweaks_widgets()` is called from inside `_rebuild_tweaks_ui` at the end to re-enable the Fetch API button and update the "Last fetched" date label.
+
+**`save_game_tweak_args(appid, args)`**
+
+Writes the user's active game-tab launch args to `games/<appid>-tweaks-args.txt`, one arg per line. Called from `_do_write()` whenever per-game custom settings are saved. If the list is empty, the file is deleted so the wrapper script skips it.
+
+### 5.31 PCGW HTML parsing – the four formats
+
+All parsers receive the raw HTML string returned by the MediaWiki `action=parse` API. They are stateless functions (no class, no GTK interaction) and return plain Python lists of dicts.
+
+---
+
+**`_html_strip(html)`** — shared utility used by all parsers. Strips all HTML tags, decodes common entities (`&amp;`, `&lt;`, `&gt;`, `&nbsp;`, `&#39;`, `&quot;`), and removes MediaWiki citation markers like `[1]`. Returns plain text.
+
+**`_is_numeric_token(s)`** — returns `True` if `s` is a pure sign-plus-digits value (e.g. `-1`, `+0`). These are parameter *values*, not flags, and are skipped as standalone entries. They may be merged with the preceding flag entry (compound arg merging, see below).
+
+---
+
+#### `_parse_pcgw_args_html(html)` — main CLI arg table parser
+
+Scans every `<tr>` row in the page for CLI arguments. Supports four table formats:
+
+| Format | HTML structure | When used |
+|---|---|---|
+| **1** | `<td class="template-infotable-monospace">-arg</td>` | Standard PCGW parameter table (rows with arg in first cell, description in second) |
+| **2** | `<td><code>-arg</code></td>` | Wikitable with `<code>` markup in first cell |
+| **3** | `<td><b>-arg</b></td>` | Wikitable with `<b>` bold markup in first cell |
+| **4** | `<td><ol><li><code>-flag= -flag</code></li></ol></td>` | Fixbox/wikitable list: a single-cell row (or a multi-cell row where formats 1–3 find nothing) whose `<li>` items contain `<code>` blocks with args |
+
+Format 4 is handled by the helper `_fmt4_extract(cell_html, args, seen)`. It finds all `<li>` elements in a cell, then scans `<code>` elements within each `<li>`. Tokens that contain `=` (e.g. `-resx=1920`) are stripped to just the flag-with-equals (`-resx=`), so the user can supply their own value in the UI.
+
+**Compound arg merging**: when a numeric-only row (e.g. `-1`) immediately follows a named flag row (e.g. `+connect_lobby`), the two are merged into a single entry `+connect_lobby -1`. This handles PCGW tables where the value is on a separate row.
+
+The function returns a list of `{"arg": str, "label": str, "desc": str}` dicts.
+
+---
+
+#### `_parse_pcgw_fixbox_inline_args(html)` — fixbox title args
+
+Scans every `<table class="fixbox">` element for a `<th class="fixbox-title">` that contains `<code>` elements. Each token in the `<code>` content that starts with `-` or `+` and contains alphabetic characters becomes a separate arg entry, with the full fixbox title as its description.
+
+Example: a fixbox titled `"Bypass launcher with <code>--skip -modded</code>"` yields two entries: `--skip` and `-modded`.
+
+---
+
+#### `_parse_pcgw_fixbox_files(html)` — file-deletion fixboxes
+
+Scans fixboxes whose title or body mentions `"delete"` or `"remove"`. Extracts `<code>` elements that contain the PCGW placeholder `<path-to-game>`. The placeholder is stripped, and the remaining relative path is stored as a glob pattern. These entries are shown in the UI as "Delete File" rows with a destructive-action button that runs `Path.glob()` against the game's installation directory.
+
+---
+
+#### `_parse_pcgw_screen_resolution_html(html)` — screen and resolution args
+
+A second pass that catches screen/window-mode and resolution CLI args that may appear anywhere on the page outside of two-column parameter tables:
+
+- **Format 2 (global)**: scans every `<code>` and `<b>` element on the entire page. Extracts tokens that pass both `_is_resolution_arg()` or `_is_screen_arg()`.
+- Tokens with `=` (e.g. `-resx=1920`) are normalised to `-resx=` before classification, so the value is always user-supplied.
+
+**`_is_resolution_arg(arg)`** — checks whether the arg's first token is a resolution-related flag. Strips the `-+/` prefix and any `=value` suffix, then looks up the bare name in `_RESOLUTION_KEYWORDS` (`width`, `height`, `resx`, `resy`, `xres`, `yres`, `screenwidth`, `screenheight`, `displaywidth`, `displayheight`, `resolution`) or in `_RESOLUTION_SHORT` (`-w`, `-h`, `/x`, `/y`, etc.).
+
+**`_is_screen_arg(arg)`** — same pattern, checks against `_SCREEN_KEYWORDS` (`fullscreen`, `windowed`, `borderless`, `noborder`, `window`, `exclusive`, `monitor`, `nofullscreen`, `nowindow`, `fullwindow`, `exclusive-fullscreen`).
+
+**`_is_fps_arg(arg)`** — checks against `_FPS_KEYWORDS` (`fps`, `maxfps`, `fpscap`, `fpsmax`, `framelimit`, `framerate`, etc.).
+
+These predicates are used both by the parsers and by `_rebuild_tweaks_ui` to decide whether an arg shows as a text entry (resolution/fps) or a toggle (screen mode).
+
+---
+
+#### `_parse_pcgw_widescreen_html(html)` — video settings support status
+
+Scans every `<tr>` row in the page for rows whose first cell matches one of the labels in `_WIDESCREEN_LABELS` (`"Widescreen resolution"`, `"4K Ultra HD"`, `"Ultrawide"`, `"Multi-monitor"`). For each match, the second cell's CSS classes are checked against `_STATUS_MAP` to determine the support status and its display colour:
+
+| CSS class found | Status text | CSS style class |
+|---|---|---|
+| `table-yes` / `template-true` | Supported | `success` (green) |
+| `table-no` / `template-false` | Not supported | `error` (red) |
+| `table-hackable` / `template-hackable` | Hackable | `warning` (orange) |
+| `table-limited` / `template-limited` | Limited | `warning` (orange) |
+| `table-na` / `template-na` | N/A | `dim-label` (grey) |
+| `table-unknown` / `template-unknown` | Unknown | `dim-label` (grey) |
+
+A third cell (if present) is extracted as a note (max 200 characters) and stored for display as a subtitle. Returns a list of `{"label", "status", "css", "note"}` dicts.
+
+### 5.32 Tweaks UI – the three preference groups
+
+`_rebuild_tweaks_ui(appid, tweaks_box, launch_args, file_ops, install_dir, editable, fetch_btn, api_row, screen_args, widescreen_info)` runs on the GTK main thread via `GLib.idle_add`. It first clears the `tweaks_box` container, then builds up to three `Adw.PreferencesGroup` sections.
+
+If all four data lists are empty, a single "No tweaks found on PCGamingWiki" message row is shown instead.
+
+---
+
+**Group 1: Game Tweaks** (from `launch_args`)
+
+Each entry in `launch_args` becomes either:
+
+- A **toggle switch** (`Adw.SwitchRow`) — when the arg is a simple flag. Active state is read from `self.s["game_tweak_args"]`. Toggling calls `self._set("game_tweak_args", sorted(cur))` which triggers `_do_write()` → `save_game_tweak_args()`.
+- A **text entry** (`Adw.ActionRow` + `Gtk.Entry`) — when the arg has a space-separated value (e.g. `+connect_lobby -1`) or contains a value token. Entries are styled with `width_chars=8`.
+
+Resolution, screen, and FPS args are moved out of this group during the fetch pipeline (see pipeline step 4 in section 5.30) and appear in Group 2 instead.
+
+---
+
+**Group 2: Screen & Resolution** (from `screen_args`)
+
+Each entry becomes a text entry row. There are two sub-types based on the flag format:
+
+| Flag format | Example | Storage format | Filter/rebuild |
+|---|---|---|---|
+| Space-separated | `-width` | `"-width 1920"` in `game_tweak_args` | filter `a.split()[0] != flag`, append `"{flag} {val}"` |
+| Equals-separated | `-resx=` | `"-resx=1920"` in `game_tweak_args` | filter `not a.startswith(flag)`, append `"{flag}{val}"` |
+
+The distinction is detected by checking `flag.endswith("=")`. Equals-separated args come from Format 4 sources where the value is embedded in the `<code>` block.
+
+Loading saved values: `stored_vals2` is built from `game_tweak_args` at rebuild time. Space-separated entries are split on whitespace; equals-separated entries are split on `=` to extract the value part. The text entry is pre-filled with the previously saved value.
+
+All text-entry change callbacks call `self._set("game_tweak_args", sorted(cur))` which triggers `_do_write()` → `save_game_tweak_args()`, so values persist across restarts immediately.
+
+Screen mode args that are not resolution-related (e.g. `-fullscreen`, `-windowed`) are shown as toggle switches with the same storage/restore logic as Group 1.
+
+---
+
+**Group 3: Widescreen Resolution** (from `widescreen_info`, read-only)
+
+Each entry is a read-only `Adw.ActionRow`. The title is the label (e.g. "Widescreen resolution"), the subtitle is the note from PCGW (if any), and a `Gtk.Label` on the right shows the status text styled with the appropriate CSS class (green/red/orange/grey). This group has no interactive controls — it is purely informational, sourced from the PCGW Video settings table.
+
 ---
 
 ## 6. Data flow diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          MainWindow (GTK)                                    │
-│                                                                               │
-│  Sidebar                Right Panel                                          │
-│  ─────────              ────────────────────────────────────────────────     │
-│  search entry           [Custom Settings toggle – games only]                │
-│  filter popover                                                               │
-│  ├─ auto-hide           MangoHud  Proton  ProtonMgr  Companion               │
-│  ├─ engine search       tab       tab     (global)   tab                     │
-│  └─ custom hidden       toggles   tweaks  versions   exec/env                │
-│                         sliders   +HDR    +credits   autofill                │
-│  game list              colors    +dis.                                       │
-│  ├─ Global / Default    position  mango                                       │
-│  └─ [Steam games]       VSync     ProtonDB  Engine  ReShade  Saves           │
-│       .engine attr                          tab     tab       tab             │
-│                                             INI     exe/dll  paths           │
-│  rescan btn             │           │         │         │       │             │
-│  → _rescan_games()      └───────────┴─────────┴─────────┴───────┘            │
-│                                     │                                         │
-│                              _set(key,v) / _mkproton()                       │
-│                                     │                                         │
-│                               _do_write()                                    │
-│                                     │                                         │
-└─────────────────────────────────────┼─────────────────────────────────────────┘
+│                          MainWindow (GTK)                                   │
+│                                                                             │
+│  Sidebar                Right Panel                                         │
+│  ─────────              ────────────────────────────────────────────────    │
+│  search entry           [Custom Settings toggle – games only]               │
+│  filter popover                                                             │
+│  ├─ auto-hide           MangoHud  Proton  ProtonMgr  Companion              │
+│  ├─ engine search       tab       tab     (global)   tab                    │
+│  └─ custom hidden       toggles   tweaks  versions   exec/env               │
+│                         sliders   +HDR    +credits   autofill               │
+│  game list              colors    +dis.                                     │
+│  ├─ Global / Default    position  mango                                     │
+│  └─ [Steam games]       VSync     ProtonDB  Game   Engine  ReShade  Saves   │
+│       .engine attr                          tab    tab      tab      tab    │
+│                                             PCGW   INI      exe/dll  paths  │
+│                                             fetch                           │
+│  rescan btn             │           │         │       │        │       │    │
+│  → _rescan_games()      └───────────┴─────────┴───────┴────────┴───────┘    │
+│                                     │                                       │
+│                              _set(key,v) / _mkproton()                      │
+│                                     │                                       │
+│                               _do_write()                                   │
+│                                     │                                       │
+└─────────────────────────────────────┼───────────────────────────────────────┘
                                       │
                ┌──────────────────────┼──────────────────────┐
                │                      │                       │
@@ -1476,3 +1699,5 @@ These are the variables written into the `gubr-launch` wrapper script and the pe
 | CachyOS gaming guide | https://wiki.cachyos.org/configuration/gaming/ | RADV_PERFTEST, AMD Anti-Lag, proton-cachyos specific vars |
 | Linux /proc filesystem | https://www.kernel.org/doc/html/latest/filesystems/proc.html | How `/proc/<pid>/environ` and `/proc/<pid>/exe` work (used by the companion autofill) |
 | Unreal Engine INI docs | https://dev.epicgames.com/documentation/en-us/unreal-engine/configuration-files-in-unreal-engine | INI file structure, section names, and key references |
+| PCGamingWiki API | https://www.pcgamingwiki.com/wiki/PCGamingWiki:API | API |
+| PCGamingWiki | https://www.pcgamingwiki.com/wiki/Home | Game Tweaks and commands | 
