@@ -20,10 +20,11 @@ Gubernator is a game configurator for Linux. It manages MangoHud and Proton sett
   - [MangoHud](#mangohud)
   - [Proton-Tweaks](#proton-tweaks)
   - [Proton Manager](#proton-manager)
-  - [Custom app](#custom-app)
+  - [Game](#game)
   - [Engine](#engine)
-  - [Reshade](#reshade)
   - [Saves](#saves)
+  - [Reshade](#reshade)
+  - [Custom app](#custom-app)
   - [Filter](#filter)
   - [Steam Launch Command](#steam-launch-command)
 - [Credits](#credits)
@@ -35,20 +36,25 @@ Gubernator is a game configurator for Linux. It manages MangoHud and Proton sett
 ## Features
 
 - Global MangoHud and Proton settings
+  - default when you don't activate per-game settings
 - Per-game MangoHud configuration
   - change MangoHud settings while the game is running
 - Per-game Proton settings
-- Applys settings automatic
-- Filter to hide Steam Proton and Linux Runtimes
-  - you can add custom fiter to hide Software (e.g. Blender, Lossless Scaling)
+  - shortcut to open ProtonDB for the specifig game (protondb.com/app/[AppID])
 - Proton Manager
   - list of all installed custom Proton versions and shortcut to open Proton Plus and ProtonUp-Qt
-- Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
-  - Isolated Wine environment variables for the custom app that do not affect the game process
+- Game
+  - uses PCGamingWiki API for more game configs and intro skip, see [details](#pcgamingwiki) 
 - Engine
   - shows the Engine for the game and adds useful settings (not for all engines)
+- Saves
+  - lets you backup your save or migrate from Linux native to Proton
 - Reshade
-- Saves lets you backup your save or migrate from Linux native to Proton
+- Custom app integration into game Proton prefix (e.g. CheatHappens Aurora)
+  - Isolated Wine environment variables for the custom app that do not affect the game process
+- Filter to hide Steam Proton and Linux Runtimes
+  - you can add custom fiter to hide Software (e.g. Blender, Lossless Scaling)
+- Applies settings automatically
 - Single Steam launch command for all games
 > there are a lot more settings that you can't see in the [images](#images)
 ---
@@ -95,13 +101,22 @@ if Aurora downloads an update and fails to restart itself, open Aurora directly 
 
 ---
 
+## PCGamingWiki
+my tool fetches the API only once per day, but you can scan manual\
+PCGamingWiki has a 30 requests/minute limit for API calls\
+i made a cache for found configs, my tool updates the cache every day when you go to the game or you do it manual\
+i made the cache for less API calls and when configs are present\
+when configs are present in the cache then it works offline\
+if no configs are found, it has no configs or i did something wrong\
+when the configs description sounds strange, it's due to it pulling directly from the API
+
 ## Project structure
 
 Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 
 ---
 > [!NOTE]
-> images are from version 1 and 2
+> images are from all versions
 
 ## Images
 ### MangoHud
@@ -110,15 +125,19 @@ Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 ![V2](/img/gubr2-2.png)
 ### Proton Manager
 ![V2](/img/gubr6.png)
-### Custom app
-![V1](/img/gubr3.png)
+### Game
+![V2.2](/img/gubr11.png)
+![V2.2](/img/gubr11-1.png)
+![V2.2](/img/gubr11-2.png)
 ### Engine
 ![V2](/img/gubr7.png)
 ![V2](/img/gubr9.png)
-### Reshade
-![V2](/img/gubr8.png)
 ### Saves
 ![V2](/img/gubr5.png)
+### Reshade
+![V2](/img/gubr8.png)
+### Custom app
+![V1](/img/gubr3.png)
 ### Filter
 ![V2](/img/gubr10.png)
 ### Steam Launch Command
@@ -137,7 +156,8 @@ Read [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md) for details
 [DXVK](https://github.com/doitsujin/dxvk) DXVK configs\
 [kevinlekiller](https://github.com/kevinlekiller/reshade-steam-proton) Reshade Script\
 [Vysp3r](https://github.com/Vysp3r/ProtonPlus) Proton Plus\
-[DavidoTek](https://github.com/DavidoTek/ProtonUp-Qt) ProtonUp-Qt
+[DavidoTek](https://github.com/DavidoTek/ProtonUp-Qt) ProtonUp-Qt\
+[PCGamingWiki](https://www.pcgamingwiki.com/wiki/Home) API and configs
 
 more credits/sources are in [GUBERNATOR_DOCS.md](/GUBERNATOR_DOCS.md)
 
